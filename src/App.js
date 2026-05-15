@@ -896,27 +896,56 @@ function BookEditor({ initial }) {
       showNotif("Dictation requires HTTPS. It works on localhost.", "error");
       return;
     }
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
-      const r = new SR();
-r.continuous = true; r.interimResults = false; r.lang = dictationLang;      r.onresult = (e) => {
-        let final = "";
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
-        }
-        if (final) {
-          const updated = (contentRef.current || "") + final;
-          contentRef.current = updated;
-          setForm(f => ({ ...f, content: updated }));
-        }
+   navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
+  const shouldKeepListening = { current: true };
+
+  const startRecognition = () => {
+    const r = new SR();
+    r.continuous = false;
+    r.interimResults = false;
+    r.lang = dictationLang;
+
+    r.onresult = (e) => {
+      let final = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
+      }
+      if (final) {
+        const updated = (contentRef.current || "") + final;
+        contentRef.current = updated;
+        setForm(f => ({ ...f, content: updated }));
+      }
+    };
+
+    r.onerror = (e) => {
+      if (e.error === "no-speech") {
+        if (shouldKeepListening.current) { try { r.start(); } catch {} }
+        return;
+      }
+      shouldKeepListening.current = false;
+      setIsListening(false);
+      const msgs = {
+        "not-allowed": "Microphone access denied. Allow it in browser settings.",
+        "network": "Network error during speech recognition."
       };
-      r.onerror = (e) => {
+      showNotif(msgs[e.error] || `Speech error: ${e.error}`, "error");
+    };
+
+    r.onend = () => {
+      if (shouldKeepListening.current) {
+        try { r.start(); } catch { setIsListening(false); }
+      } else {
         setIsListening(false);
-        const msgs = { "not-allowed": "Microphone access denied. Allow it in browser settings.", "no-speech": "No speech detected. Try speaking closer.", "network": "Network error during speech recognition." };
-        showNotif(msgs[e.error] || `Speech error: ${e.error}`, "error");
-      };
-      r.onend = () => setIsListening(false);
-      r.start(); recognitionRef.current = r; setIsListening(true);
-    }).catch(() => showNotif("Microphone access denied. Allow it in browser settings.", "error"));
+      }
+    };
+
+    r.start();
+    recognitionRef.current = { stop: () => { shouldKeepListening.current = false; r.stop(); } };
+    setIsListening(true);
+  };
+
+  startRecognition();
+}).catch(() => showNotif("Microphone access denied. Allow it in browser settings.", "error"));
   }, [dictationLang, showNotif]);
 
   const stopDictation = () => { recognitionRef.current?.stop(); setIsListening(false); };
