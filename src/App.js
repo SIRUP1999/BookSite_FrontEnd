@@ -844,7 +844,19 @@ function AdminDashboard() {
     </div>
   );
 }
-
+function SeriesSelect({ value, onChange }) {
+  const [series, setSeries] = useState([]);
+  useEffect(() => {
+    fetch(`${API}/api/series`).then(r => r.json())
+      .then(d => setSeries(Array.isArray(d) ? d : [])).catch(() => {});
+  }, []);
+  return (
+    <select style={S.input} value={value || ""} onChange={e => onChange(e.target.value || null)}>
+      <option value="">No Series</option>
+      {series.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+    </select>
+  );
+}
 // ─── BOOK EDITOR — defined OUTSIDE App, fixes the input/dictation bug ─────
 function BookEditor({ initial }) {
   const { adminToken, showNotif, setAdminView, fetchAdminBooks } = useCtx();
@@ -885,8 +897,7 @@ function BookEditor({ initial }) {
     }
     navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
       const r = new SR();
-      r.continuous = true; r.interimResults = true; r.lang = dictationLang;
-      r.onresult = (e) => {
+r.continuous = true; r.interimResults = false; r.lang = dictationLang;      r.onresult = (e) => {
         let final = "";
         for (let i = e.resultIndex; i < e.results.length; i++) {
           if (e.results[i].isFinal) final += e.results[i][0].transcript + " ";
@@ -969,6 +980,10 @@ function BookEditor({ initial }) {
           <label style={S.label}>Price (GH₵) — 0 = Free</label>
           <input style={S.input} type="number" min="0" step="0.01" value={form.price} onChange={e => set("price", parseFloat(e.target.value) || 0)} />
         </div>
+        <div>
+  <label style={S.label}>Book Series (optional)</label>
+  <SeriesSelect value={form.seriesId} onChange={val => set("seriesId", val)} />
+</div>
       </div>
 
       <div style={{ marginBottom: 18 }}>
@@ -1274,8 +1289,7 @@ function AdminNewsletter() {
       {/* Subscriber list */}
       <div style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 18, color: "#c9a84c", marginBottom: 16 }}>Subscriber List</div>
       {loading ? <div style={{ color: "#4a3a5a", fontStyle: "italic" }}>Loading…</div> : (
-        <div style={{ ...S.card, padding: 0, overflow: "hidden" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 150px", padding: "10px 18px", borderBottom: "1px solid #2a1e3a", fontSize: 10, color: "#4a3a5a", fontFamily: "Cinzel, serif", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+<div style={{ ...S.card, padding: 0, overflow: "auto" }}>          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 150px", padding: "10px 18px", borderBottom: "1px solid #2a1e3a", fontSize: 10, color: "#4a3a5a", fontFamily: "Cinzel, serif", letterSpacing: "0.1em", textTransform: "uppercase" }}>
             <span>Email</span><span>Name</span><span>Subscribed</span>
           </div>
           {subscribers.length === 0 && <div style={{ padding: 32, textAlign: "center", color: "#4a3a5a", fontStyle: "italic" }}>No subscribers yet.</div>}
