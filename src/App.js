@@ -639,8 +639,9 @@ function Reader({ book }) {
           <div style={{ fontSize: 10, letterSpacing: "0.3em", color: "#5a4a6a", textTransform: "uppercase", marginBottom: 12, fontFamily: "Cinzel, serif" }}>{book.genre}</div>
           <h1 style={{ fontFamily: "Cormorant Garamond, serif", fontSize: 40, fontWeight: 700, color: "#ede0cc", marginBottom: 10, lineHeight: 1.2 }}>{book.title}</h1>
           <div style={{ fontSize: 14, color: "#6a5a4a", fontStyle: "italic", fontFamily: "'EB Garamond', serif", marginBottom: 20 }}>by {book.author}</div>
-          <BookCover book={book} size="sm" />
-        </div>
+<div style={{ display: "flex", justifyContent: "center" }}>
+  <BookCover book={book} size="sm" />
+</div>        </div>
 
         {/* Content */}
 <div style={{ fontFamily: "'EB Garamond', serif", fontSize: 17, lineHeight: 1.6, color: "#c8b89a", letterSpacing: "0.02em", maxWidth: 640, margin: "0 auto" }}>          {display.map((l, i) => {
